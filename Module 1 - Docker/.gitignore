@@ -1,0 +1,4 @@
+.env
+mysql-db/.env
+logs/
+tokens/
