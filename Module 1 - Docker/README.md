@@ -23,10 +23,6 @@ The system consists of three isolated containers:
     - Stores request logs (`requests` table).
     - Isolated in the `back-net` (not accessible from Nginx directly).
 
-## Prerequisites
-- Docker
-- Docker Compose
-
 ## Installation & Usage
 
 1.  **Clone the repository** (if applicable) or navigate to the project folder.
@@ -81,9 +77,7 @@ Returns the total number of tracked requests from the database.
 ### Nginx `auth_request`
 Instead of implementing authentication logic in every endpoint or using a complex API Gateway, we leverage Nginx's `auth_request` module.
 - **How it works**: For every request to `/` or Protected Endpoints, Nginx makes a purely internal sub-request to `/validate_token` (mapped to Python's `/validate_token`).
-- **Benefit**: Decouples authentication enforcement from business logic. Nginx acts as a tough gatekeeper.
 
 ### Token Expiration
 Tokens are valid for **10 minutes**.
 - **Implementation**: The Python app checks the filesystem modification time of the token file (`auth_token`). If `Time.now() - File.mtime > 600 seconds`, the token is rejected.
-- **Why**: Simple, stateless (no complex redis/db required for TTL), and effective for this scope.
