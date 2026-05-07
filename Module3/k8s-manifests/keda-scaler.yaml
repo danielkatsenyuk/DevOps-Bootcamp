@@ -1,0 +1,17 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: application-scaler
+  namespace: application
+spec:
+  scaleTargetRef:
+    name: application-deployment 
+  minReplicaCount: 1  
+  maxReplicaCount: 10 
+  triggers:
+  - type: prometheus
+    metadata:
+      serverAddress: http://prometheus-service.prometheus.svc.cluster.local:9090
+      metricName: app_requests_total
+      query: app_requests_total
+      threshold: "10"

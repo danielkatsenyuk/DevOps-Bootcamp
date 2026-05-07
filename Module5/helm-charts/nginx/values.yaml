@@ -1,0 +1,16 @@
+replicaCount: 2
+
+image:
+  repository: 960341592570.dkr.ecr.us-east-1.amazonaws.com/task1-dev-us-east-1-daniel-katsenyuk-nginx-repo
+  tag: latest
+
+service:
+  type: LoadBalancer
+  port: 80
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+
+backend:
+  serviceName: "application-service"
+  namespace: "application"
+  port: 5000

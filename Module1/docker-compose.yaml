@@ -4,7 +4,7 @@ services:
   mysql-db:
     build: ./mysql-db
     container_name: mysql-db
-    restart: always
+    restart: unless-stopped
     env_file:
       - ./mysql-db/.env
     networks:
@@ -15,7 +15,7 @@ services:
   python-app:
     build: ./python-app
     container_name: python-container
-    restart: always
+    restart: unless-stopped
     depends_on:
       - mysql-db
     environment:

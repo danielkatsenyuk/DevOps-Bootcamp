@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Chart.Name }}-config
+data:
+  nginx.conf: |
+    events {
+      worker_connections 1024;
+    }
+    http {
+      upstream python_app {
+        server {{ .Values.backend.serviceName }}.{{ .Values.backend.namespace }}.svc.cluster.local:{{ .Values.backend.port }};
+      }
+
+      server {
+        listen 80;
+
+        location / {
+          auth_request /auth;
+          proxy_pass http://python_app;
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header Authorization $http_authorization;
+        }
+
+        location /token {
+          proxy_pass http://python_app;
+        }
+
+        location = /auth {
+          internal;
+          proxy_pass http://python_app/validate_token;
+          proxy_pass_request_body off;
+          proxy_set_header Content-Length "";
+          proxy_set_header X-Original-URI $request_uri;
+          proxy_method GET;
+        }
+      }
+    }

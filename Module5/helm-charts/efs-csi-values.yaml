@@ -1,0 +1,12 @@
+controller:
+  serviceAccount:
+    create: true
+    annotations:
+      # You already have the IRSA role from Module 2
+      eks.amazonaws.com/role-arn: "arn:aws:iam::960341592570:role/task1-dev-us-east-1-daniel-katsenyuk-efs-csi-role"
+storageClasses:
+  - name: efs-sc
+    parameters:
+      provisioningMode: efs-ap
+      fileSystemId: "fs-0b9ebcb800eec5bc9" # Your EFS ID from Module 2
+      directoryPerms: "700"

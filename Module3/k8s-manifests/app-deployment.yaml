@@ -1,0 +1,66 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: application-sa
+  namespace: application
+  annotations:
+    eks.amazonaws.com/role-arn: "arn:aws:iam::960341592570:role/task1-dev-us-east-1-daniel-katsenyuk-application-role"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: application-deployment
+  namespace: application
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: application
+  template:
+    metadata:
+      labels:
+        app: application
+    spec:
+      serviceAccountName: application-sa
+      containers:
+      - name: application
+        image: 960341592570.dkr.ecr.us-east-1.amazonaws.com/task1-dev-us-east-1-daniel-katsenyuk-application-repo
+        ports:
+        - containerPort: 5000 
+        env:
+        - name: MYSQL_HOST
+          valueFrom: { secretKeyRef: { name: app-secret, key: host } }
+        - name: MYSQL_USER
+          valueFrom: { secretKeyRef: { name: app-secret, key: user } }
+        - name: MYSQL_PASSWORD
+          valueFrom: { secretKeyRef: { name: app-secret, key: password } }
+        - name: MYSQL_DATABASE
+          valueFrom: { secretKeyRef: { name: app-secret, key: database } }
+        - name: TOKEN
+          valueFrom: { secretKeyRef: { name: app-secret, key: token } }
+        volumeMounts: 
+        - name: secrets-store-inline
+          mountPath: "/mnt/secrets-store"
+          readOnly: true
+      volumes:
+      - name: secrets-store-inline
+        csi:
+          driver: secrets-store.csi.k8s.io
+          readOnly: true
+          volumeAttributes:
+            secretProviderClass: "app-parameter-provider"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: application-service
+  namespace: application
+spec:
+  selector:
+    app: application
+  ports:
+    - protocol: TCP
+      port: 5000
+      targetPort: 5000

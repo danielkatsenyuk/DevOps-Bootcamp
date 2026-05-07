@@ -1,0 +1,9 @@
+Resource ARN,Resource Name,Service Type,Daily Cost ($),Region
+arn:aws:ssm:us-east-1:960341592570:parameter/dev/dbserver/mysql/database,database,ssm:parameter,0.0,us-east-1
+arn:aws:logs:us-east-1:960341592570:log-group:/aws/lambda/StackSet-temp-8776f7e3-d77d-4057-97f6-a86570b493e7-fn,StackSet-temp-8776f7e3-d77d-4057-97f6-a86570b493e7-fn,logs:log-group,1.7285714285714284e-09,us-east-1
+arn:aws:ssm:us-east-1:960341592570:parameter/dev/dbserver/mysql/password,password,ssm:parameter,0.0,us-east-1
+arn:aws:ssm:us-east-1:960341592570:parameter/dev/dbserver/mysql/user,user,ssm:parameter,0.0,us-east-1
+arn:aws:ec2:us-east-1:960341592570:volume/vol-09e9610d6ac1791e6,vol-09e9610d6ac1791e6,ec2:volume,0.05104235200000001,us-east-1
+arn:aws:ssm:us-east-1:960341592570:parameter/dev/myapp/mysql/password,password,ssm:parameter,0.0,us-east-1
+arn:aws:ssm:us-east-1:960341592570:parameter/dev/myapp/mysql/host,host,ssm:parameter,0.0,us-east-1
+arn:aws:ssm:us-east-1:960341592570:parameter/dev/myapp/mysql/user,user,ssm:parameter,0.0,us-east-1

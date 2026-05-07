@@ -1,0 +1,9 @@
+Resource ARN,Service Type
+arn:aws:ssm:us-east-1:960341592570:parameter/dev/dbserver/mysql/database,ssm:parameter
+arn:aws:logs:us-east-1:960341592570:log-group:/aws/lambda/StackSet-temp-8776f7e3-d77d-4057-97f6-a86570b493e7-fn,logs:log-group
+arn:aws:ssm:us-east-1:960341592570:parameter/dev/dbserver/mysql/password,ssm:parameter
+arn:aws:ssm:us-east-1:960341592570:parameter/dev/dbserver/mysql/user,ssm:parameter
+arn:aws:ec2:us-east-1:960341592570:volume/vol-09e9610d6ac1791e6,ec2:volume
+arn:aws:ssm:us-east-1:960341592570:parameter/dev/myapp/mysql/password,ssm:parameter
+arn:aws:ssm:us-east-1:960341592570:parameter/dev/myapp/mysql/host,ssm:parameter
+arn:aws:ssm:us-east-1:960341592570:parameter/dev/myapp/mysql/user,ssm:parameter
