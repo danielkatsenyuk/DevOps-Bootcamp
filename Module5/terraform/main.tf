@@ -55,10 +55,11 @@ data "aws_route53_zone" "bootcamp_zone" {
 
 data "kubernetes_service_v1" "ingress_nginx" {
   metadata {
-    name      = "my-nginx-ingress-nginx-controller"
+    name      = "ingress-nginx-controller"
     namespace = "nginx"
   }
 }
+
 
 # Requesting a TLS certificate in ACM for the domain and subdomains
 resource "aws_acm_certificate" "cert" {
