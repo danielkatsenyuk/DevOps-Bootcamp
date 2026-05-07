@@ -5,10 +5,8 @@ image:
   tag: latest
 
 service:
-  type: LoadBalancer
+  type: ClusterIP
   port: 80
-  annotations:
-    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
 
 backend:
   serviceName: "application-service"

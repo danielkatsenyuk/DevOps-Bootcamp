@@ -1,0 +1,87 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mysql-app
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: 'https://github.com/danielkatsenyuk/DevOps-Bootcamp.git'
+    targetRevision: HEAD
+    path: Module5/helm-charts/mysql
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: mysql
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: backend-app
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: 'https://github.com/danielkatsenyuk/DevOps-Bootcamp.git'
+    targetRevision: HEAD
+    path: Module5/helm-charts/application
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: application
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nginx-app
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: 'https://github.com/danielkatsenyuk/DevOps-Bootcamp.git'
+    targetRevision: HEAD
+    path: Module5/helm-charts/nginx
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: nginx
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ingress-nginx
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: 'https://kubernetes.github.io/ingress-nginx'
+    chart: ingress-nginx
+    targetRevision: 4.10.1
+    helm:
+      # We point to your values file in GitHub
+      valueFiles:
+      - https://raw.githubusercontent.com/danielkatsenyuk/DevOps-Bootcamp/main/Module5/helm-charts/ingress-nginx-values.yaml
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: nginx
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
