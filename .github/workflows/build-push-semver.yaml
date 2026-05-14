@@ -3,10 +3,15 @@ name: Build and Push SemVer
 on:
   workflow_dispatch:
     inputs:
-      role_arn:
-        description: 'IAM Role ARN to assume'
+      service:
+        description: 'Service to build'
         required: true
-        default: 'arn:aws:iam::960341592570:role/github-actions-role'
+        type: choice
+        options:
+          - application
+          - mysql
+          - nginx
+        default: 'application'
       bump_type:
         description: 'SemVer bump type'
         required: true
@@ -16,18 +21,25 @@ on:
           - minor
           - major
         default: 'patch'
+      role_arn:
+        description: 'IAM Role ARN to assume'
+        required: true
+        default: 'arn:aws:iam::960341592570:role/github-actions-role'
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true # Silence Node 20 deprecation warnings
 
 jobs:
   build-push-tag:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
-      contents: write # חובה כדי ליצור Tag ב-Git
+      contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # required to calculate version from tags
+          fetch-depth: 0
 
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
@@ -45,25 +57,41 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           default_bump: ${{ github.event.inputs.bump_type }}
+          # Create a separate tag per service to avoid collisions
+          tag_prefix: "${{ github.event.inputs.service }}-v"
 
       - name: Build, tag, and push image to Amazon ECR
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: task1-dev-us-east-1-daniel-katsenyuk-application-repo
+          SERVICE: ${{ github.event.inputs.service }}
           IMAGE_TAG: ${{ steps.tag_version.outputs.new_tag }}
         run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ./Module1/python-app
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          echo "Pushed image with tag: $IMAGE_TAG"
+          # Map service to directory and repo name
+          if [ "$SERVICE" == "mysql" ]; then
+            REPO="task1-dev-us-east-1-daniel-katsenyuk-mysql-repo"
+            CONTEXT="./Module1/mysql-db"
+          elif [ "$SERVICE" == "nginx" ]; then
+            REPO="task1-dev-us-east-1-daniel-katsenyuk-nginx-repo"
+            CONTEXT="./Module1/nginx-proxy"
+          else
+            REPO="task1-dev-us-east-1-daniel-katsenyuk-application-repo"
+            CONTEXT="./Module1/python-app"
+          fi
+          
+          docker build -t $ECR_REGISTRY/$REPO:$IMAGE_TAG $CONTEXT
+          docker push $ECR_REGISTRY/$REPO:$IMAGE_TAG
+          echo "repo=$REPO" >> $GITHUB_ENV
 
       - name: Update Helm Chart values.yaml
         run: |
-          sed -i "s/tag: .*/tag: ${{ steps.tag_version.outputs.new_tag }}/g" Module5/helm-charts/application/values.yaml
+          VALUE_FILE="Module5/helm-charts/${{ github.event.inputs.service }}/values.yaml"
+          sed -i "s/tag: .*/tag: \"${{ steps.tag_version.outputs.new_tag }}\"/g" $VALUE_FILE
 
       - name: Commit and push changes
         run: |
           git config --global user.email "github-actions@github.com"
           git config --global user.name "GitHub Actions"
-          git add Module5/helm-charts/application/values.yaml
-          git commit -m "chore: update image tag to ${{ steps.tag_version.outputs.new_tag }} [skip ci]"
+          git add .
+          git commit -m "chore: update ${{ github.event.inputs.service }} image tag to ${{ steps.tag_version.outputs.new_tag }} [skip ci]"
           git push
+
