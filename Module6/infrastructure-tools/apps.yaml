@@ -113,24 +113,10 @@ spec:
         server:
           extraArgs:
             - --auth-mode=server
-            - --secure=false # Fixes the 'Too many redirects' error
+            - --secure=false
           service:
             type: ClusterIP
             httpsPort: 2746
-          ingress:
-            enabled: true
-            ingressClassName: nginx
-            annotations:
-              cert-manager.io/cluster-issuer: letsencrypt-prod
-              nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
-              nginx.ingress.kubernetes.io/proxy-body-size: "512m"
-              nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
-            hosts:
-              - argo.dkats-bootcamp.com
-            tls:
-              - hosts:
-                  - argo.dkats-bootcamp.com
-                secretName: argo-workflows-tls
   destination:
     server: https://kubernetes.default.svc
     namespace: argo-workflows
