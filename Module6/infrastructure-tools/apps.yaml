@@ -125,3 +125,9 @@ spec:
     syncOptions:
     - CreateNamespace=true
     - ServerSideApply=true
+    - Validate=false
+  ignoreDifferences:
+  - group: apps
+    kind: Deployment
+    jsonPointers:
+    - /status
