@@ -6,7 +6,7 @@ on:
       role_arn:
         description: 'IAM Role ARN to assume'
         required: true
-        default: 'arn:aws:iam::960341592570:role/github-actions-role' # החלף ב-Role האמיתי שלך אם ידוע
+        default: 'arn:aws:iam::960341592570:role/github-actions-role'
       module:
         description: 'Terraform module to plan'
         required: true
@@ -22,7 +22,7 @@ jobs:
   terraform-plan:
     runs-on: ubuntu-latest
     permissions:
-      id-token: write # חובה עבור OIDC
+      id-token: write # Required for OIDC authentication
       contents: read
     steps:
       - name: Checkout code
@@ -38,8 +38,11 @@ jobs:
         uses: hashicorp/setup-terraform@v3
 
       - name: Terraform Init & Plan
+        env:
+          TF_VAR_argocd_github_client_secret: ${{ secrets.ARGOCD_GITHUB_CLIENT_SECRET }}
         run: |
           cd "${{ github.event.inputs.module }}"
           if [ -d "terraform" ]; then cd terraform; fi
           terraform init -input=false
           terraform plan -input=false
+
