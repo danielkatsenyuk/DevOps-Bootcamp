@@ -116,3 +116,11 @@ resource "aws_route53_record" "argocd_record" {
   ttl     = 300
   records = [data.kubernetes_service_v1.ingress_nginx.status[0].load_balancer[0].ingress[0].hostname]
 }
+
+resource "aws_route53_record" "argo_record" {
+  zone_id = data.aws_route53_zone.bootcamp_zone.zone_id
+  name    = "argo.${var.domain_name}"
+  type    = "CNAME"
+  ttl     = 300
+  records = [data.kubernetes_service_v1.ingress_nginx.status[0].load_balancer[0].ingress[0].hostname]
+}
