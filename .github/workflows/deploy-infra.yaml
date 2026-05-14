@@ -10,7 +10,7 @@ on:
       cluster_name:
         description: 'EKS Cluster Name'
         required: true
-        default: 'task1-dev-us-east-1-daniel-katsenyuk-eks' # וודא שזה השם הנכון של הקלאסטר שלך
+        default: 'task1-dev-us-east-1-daniel-katsenyuk-cluster'
 
 jobs:
   deploy-infra:
