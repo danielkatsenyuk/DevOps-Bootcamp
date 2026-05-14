@@ -37,6 +37,17 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
+      - name: Debug Secret (Check if set)
+        env:
+          DEBUG_SECRET: ${{ secrets.ARGOCD_GITHUB_CLIENT_SECRET }}
+        run: |
+          if [ -z "$DEBUG_SECRET" ]; then
+            echo "::error::GITHUB SECRET 'ARGOCD_GITHUB_CLIENT_SECRET' IS NOT FOUND! Check your GitHub Settings."
+            exit 1
+          else
+            echo "SUCCESS: GitHub Secret is found and has a length of ${#DEBUG_SECRET} characters."
+          fi
+
       - name: Terraform Init & Plan
         env:
           TF_VAR_argocd_github_client_secret: ${{ secrets.ARGOCD_GITHUB_CLIENT_SECRET }}
@@ -45,4 +56,5 @@ jobs:
           if [ -d "terraform" ]; then cd terraform; fi
           terraform init -input=false
           terraform plan -input=false
+
 
