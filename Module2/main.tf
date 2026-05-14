@@ -169,6 +169,11 @@ resource "aws_eks_cluster" "main" {
     subnet_ids = concat(aws_subnet.public[*].id, aws_subnet.private[*].id)
   }
 
+  access_config {
+    authentication_mode                         = "API_AND_CONFIG_MAP"
+    bootstrap_cluster_creator_admin_permissions = true
+  }
+
   # ensures that the IAM policies are created before the cluster tries to use them
   depends_on = [
     aws_iam_role_policy_attachment.eks_cluster_policy

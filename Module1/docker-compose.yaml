@@ -11,18 +11,24 @@ services:
       - back-net
     volumes:
       - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   python-app:
     build: ./python-app
     container_name: python-container
     restart: unless-stopped
     depends_on:
-      - mysql-db
+      mysql-db:
+        condition: service_healthy
+    env_file:
+      - ./mysql-db/.env        # reuses the same credentials file
     environment:
-      - MYSQL_HOST=mysql-db
-      - MYSQL_USER=user
-      - MYSQL_PASSWORD=password
-      - MYSQL_DATABASE=app_db
+      - MYSQL_HOST=mysql-db    # override host to match the container name
     volumes:
       - ./logs:/app/logs
       - ./tokens:/app/tokens
@@ -31,7 +37,7 @@ services:
       - front-net
 
   nginx-proxy:
-    image: nginx:alpine
+    build: ./nginx-proxy
     container_name: nginx-proxy
     ports:
       - "8080:80"
@@ -51,3 +57,4 @@ networks:
 
 volumes:
   db_data:
+

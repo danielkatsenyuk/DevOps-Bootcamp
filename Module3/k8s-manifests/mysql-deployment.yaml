@@ -25,12 +25,14 @@ spec:
       serviceAccountName: mysql-sa
       containers:
       - name: mysql
-        image: mysql:8.0
+        image: 960341592570.dkr.ecr.us-east-1.amazonaws.com/task1-dev-us-east-1-daniel-katsenyuk-mysql-repo:1.0.0
         securityContext:
-          runAsUser: 999 
+          runAsUser: 999
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
         ports:
         - containerPort: 3306
-        env: 
+        env:
         - name: MYSQL_ROOT_PASSWORD
           valueFrom:
             secretKeyRef:
@@ -41,16 +43,35 @@ spec:
             secretKeyRef:
               name: mysql-secret
               key: database
-        volumeMounts: 
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "512Mi"
+          limits:
+            cpu: "500m"
+            memory: "1Gi"
+        readinessProbe:
+          tcpSocket:
+            port: 3306
+          initialDelaySeconds: 20
+          periodSeconds: 10
+          failureThreshold: 5
+        livenessProbe:
+          tcpSocket:
+            port: 3306
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          failureThreshold: 3
+        volumeMounts:
         - name: efs-storage
-          mountPath: /var/lib/mysql 
+          mountPath: /var/lib/mysql
         - name: secrets-store-inline
           mountPath: "/mnt/secrets-store"
           readOnly: true
       volumes:
       - name: efs-storage
         persistentVolumeClaim:
-          claimName: efs-mysql-claim 
+          claimName: efs-mysql-claim
       - name: secrets-store-inline
         csi:
           driver: secrets-store.csi.k8s.io

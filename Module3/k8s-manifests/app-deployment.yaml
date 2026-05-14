@@ -25,9 +25,13 @@ spec:
       serviceAccountName: application-sa
       containers:
       - name: application
-        image: 960341592570.dkr.ecr.us-east-1.amazonaws.com/task1-dev-us-east-1-daniel-katsenyuk-application-repo
+        image: 960341592570.dkr.ecr.us-east-1.amazonaws.com/task1-dev-us-east-1-daniel-katsenyuk-application-repo:1.0.0
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          allowPrivilegeEscalation: false
         ports:
-        - containerPort: 5000 
+        - containerPort: 5000
         env:
         - name: MYSQL_HOST
           valueFrom: { secretKeyRef: { name: app-secret, key: host } }
@@ -39,7 +43,28 @@ spec:
           valueFrom: { secretKeyRef: { name: app-secret, key: database } }
         - name: TOKEN
           valueFrom: { secretKeyRef: { name: app-secret, key: token } }
-        volumeMounts: 
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "256Mi"
+        readinessProbe:
+          httpGet:
+            path: /count
+            port: 5000
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /count
+            port: 5000
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          failureThreshold: 3
+        volumeMounts:
         - name: secrets-store-inline
           mountPath: "/mnt/secrets-store"
           readOnly: true

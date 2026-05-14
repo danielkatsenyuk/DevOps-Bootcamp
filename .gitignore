@@ -1,8 +1,21 @@
 .continue/*
 info.txt
 
+# Environment files - NEVER commit secrets
+**/.env
+**/.env.*
+!**/.env.example
+
 # Terraform
 **/.terraform/*
 *.tfstate
 *.tfstate.backup
 **/.terraform.lock.hcl
+
+# Python
+**/venv/
+**/__pycache__/
+**/*.pyc
+
+# Generated CSV output files
+Module4/*.csv

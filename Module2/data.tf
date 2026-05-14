@@ -27,18 +27,31 @@ data "aws_iam_policy_document" "eks_nodes_assume_role" {
   }
 }
 
-# policy that allows reading and writing to the secret we created (and SSM parameters)
+# policy that allows reading and writing only to the specific secret we created (and SSM parameters)
 data "aws_iam_policy_document" "app_secret_access" {
   statement {
+    sid = "AllowSpecificSecretAccess"
     actions = [
       "secretsmanager:GetSecretValue",
       "secretsmanager:PutSecretValue",
-      "ssm:GetParameter",
-      "ssm:GetParameters"
+      "secretsmanager:DescribeSecret"
     ]
-    resources = ["*"]
+    resources = [aws_secretsmanager_secret.app_token.arn]
+  }
+
+  statement {
+    sid = "AllowSSMParameterAccess"
+    actions = [
+      "ssm:GetParameter",
+      "ssm:GetParameters",
+      "ssm:GetParametersByPath"
+    ]
+    # Scope to parameters under /dev/myapp/ prefix
+    resources = ["arn:aws:ssm:${var.aws_region}:*:parameter/${var.environment}/myapp/*",
+                 "arn:aws:ssm:${var.aws_region}:*:parameter/${var.environment}/config/*"]
   }
 }
+
 
 # Trust Policy that allows Kubernetes to take this role (Service Accounts)
 data "aws_iam_policy_document" "app_assume_role" {

@@ -1,0 +1,45 @@
+name: Terraform Plan
+
+on:
+  workflow_dispatch:
+    inputs:
+      role_arn:
+        description: 'IAM Role ARN to assume'
+        required: true
+        default: 'arn:aws:iam::960341592570:role/github-actions-role' # החלף ב-Role האמיתי שלך אם ידוע
+      module:
+        description: 'Terraform module to plan'
+        required: true
+        type: choice
+        options:
+          - Module2
+          - Module3
+          - Module4
+          - Module5
+          - Module6
+
+jobs:
+  terraform-plan:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # חובה עבור OIDC
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ github.event.inputs.role_arn }}
+          aws-region: us-east-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init & Plan
+        run: |
+          cd "${{ github.event.inputs.module }}"
+          if [ -d "terraform" ]; then cd terraform; fi
+          terraform init -input=false
+          terraform plan -input=false

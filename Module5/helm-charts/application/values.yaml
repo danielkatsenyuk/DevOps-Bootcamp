@@ -2,7 +2,7 @@ replicaCount: 1
 
 image:
   repository: 960341592570.dkr.ecr.us-east-1.amazonaws.com/task1-dev-us-east-1-daniel-katsenyuk-application-repo
-  tag: latest
+  tag: "1.0.0"
 
 service:
   port: 5000

@@ -1,7 +1,7 @@
-# Module 1 - Docker: Secure Token System
+# Module 1 – Docker: Secure Token System
 
 ## Project Overview
-This project demonstrates a secure, containerized web application using **Docker** and **Python (Flask)**. It implements a secure token authentication system where an **Nginx** reverse proxy validates requests against the Python backend before allowing access to protected endpoints.
+This project demonstrates a secure, containerized web application using **Docker** and **Python (Flask)**. It implements a token authentication system where an **Nginx** reverse proxy validates every request against the Python backend using `auth_request` before forwarding to protected endpoints. Tokens are stored in **AWS Secrets Manager** and expire after 10 minutes.
 
 ## Architecture
 
@@ -25,17 +25,21 @@ The system consists of three isolated containers:
 
 ## Installation & Usage
 
-1.  **Clone the repository** (if applicable) or navigate to the project folder.
-2.  **Build and Start** the containers:
+1. **Copy the env example** and fill in your values:
+    ```bash
+    cp mysql-db/.env.example mysql-db/.env
+    # Edit mysql-db/.env with your passwords
+    ```
+2. **Build and Start** the containers:
     ```bash
     docker-compose up --build
     ```
-3.  The application will be available at `http://localhost:8080`.
+3. The application will be available at `http://localhost:8080`.
 
 ## API Documentation
 
 ### 1. Generate Token
-Generates a secure, base64-encoded token valid for 10 minutes.
+Generates a secure, base64-encoded token valid for 10 minutes and stores it in **AWS Secrets Manager**.
 
 - **URL**: `/token`
 - **Method**: `GET`
@@ -48,10 +52,10 @@ Generates a secure, base64-encoded token valid for 10 minutes.
     ```
 
 ### 2. Track Request (Protected)
-Logs a request to the database. Requires a valid token.
+Logs a request to the MySQL database. Requires a valid token.
 
 - **URL**: `/track`
-- **Method**: `POST`
+- **Method**: `GET` or `POST`
 - **Headers**:
     - `Authorization`: `<your_token>`
 - **Response**:
@@ -72,12 +76,29 @@ Returns the total number of tracked requests from the database.
     }
     ```
 
+### 4. Metrics (Prometheus)
+Exposes the request count as a Prometheus gauge metric.
+
+- **URL**: `/metrics`
+- **Method**: `GET`
+- **Response**: Prometheus text format (`app_requests_total`)
+
 ## Design Decisions
 
 ### Nginx `auth_request`
-Instead of implementing authentication logic in every endpoint or using a complex API Gateway, we leverage Nginx's `auth_request` module.
-- **How it works**: For every request to `/` or Protected Endpoints, Nginx makes a purely internal sub-request to `/validate_token` (mapped to Python's `/validate_token`).
+Nginx delegates authentication to the Python app using the `auth_request` module.
+- For every request to a protected route, Nginx makes an internal sub-request to `/validate_token`.
+- If the response is `200`, the original request is forwarded. If `401`, the client is rejected.
+- The `/token` endpoint bypasses auth so users can obtain a new token.
 
-### Token Expiration
-Tokens are valid for **10 minutes**.
-- **Implementation**: The Python app checks the filesystem modification time of the token file (`auth_token`). If `Time.now() - File.mtime > 600 seconds`, the token is rejected.
+### Token Storage (AWS Secrets Manager)
+Tokens are generated with `secrets.token_urlsafe(32)`, base64-encoded, and stored in AWS Secrets Manager.
+- The secret stores both the token value and the `created_at` timestamp as JSON.
+- `/validate_token` reads the secret and checks `time.now() - created_at <= 600 seconds`.
+- Tokens are **not** written to logs (only `"Token generated"` is logged, not the token value).
+
+### Network Isolation
+Two Docker networks enforce the principle of least privilege:
+- **`front-net`**: Nginx ↔ Python App only
+- **`back-net`**: Python App ↔ MySQL only
+- Nginx **cannot** reach MySQL directly.
