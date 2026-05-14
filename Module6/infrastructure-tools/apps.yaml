@@ -105,9 +105,9 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://charts.karpenter.sh
+    repoURL: public.ecr.aws/karpenter
     chart: karpenter
-    targetRevision: 0.32.1
+    targetRevision: 0.37.0
     helm:
       values: |
         settings:
