@@ -124,6 +124,10 @@ spec:
               - hosts:
                   - argo.dkats-bootcamp.com
                 secretName: argo-workflows-tls
+        server:
+          service:
+            type: ClusterIP
+            httpsPort: 2746
   destination:
     server: https://kubernetes.default.svc
     namespace: argo-workflows
