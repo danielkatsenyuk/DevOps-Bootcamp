@@ -100,26 +100,24 @@ spec:
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: argo-workflows
+  name: karpenter
   namespace: argocd
 spec:
   project: default
   source:
-    repoURL: https://argoproj.github.io/argo-helm
-    chart: argo-workflows
-    targetRevision: 0.45.0
+    repoURL: oci://public.ecr.aws/karpenter
+    chart: karpenter
+    targetRevision: 0.37.0
     helm:
       values: |
-        server:
-          extraArgs:
-            - --auth-mode=server
-            - --secure=false
-          service:
-            type: ClusterIP
-            httpsPort: 2746
+        settings:
+          clusterName: task1-dev-us-east-1-daniel-katsenyuk-cluster
+        serviceAccount:
+          annotations:
+            eks.amazonaws.com/role-arn: arn:aws:iam::960341592570:role/KarpenterControllerRole
   destination:
     server: https://kubernetes.default.svc
-    namespace: argo-workflows
+    namespace: karpenter
   syncPolicy:
     automated:
       prune: true
@@ -127,9 +125,3 @@ spec:
     syncOptions:
     - CreateNamespace=true
     - ServerSideApply=true
-    - Validate=false
-  ignoreDifferences:
-  - group: apps
-    kind: Deployment
-    jsonPointers:
-    - /status
