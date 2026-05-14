@@ -1,0 +1,53 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: deploy-karpenter-
+  namespace: argo-workflows
+spec:
+  entrypoint: main
+  templates:
+  - name: main
+    steps:
+    - - name: apply-karpenter-app
+        template: kubectl-apply
+        arguments:
+          parameters:
+          - name: manifest
+            value: |
+              apiVersion: argoproj.io/v1alpha1
+              kind: Application
+              metadata:
+                name: karpenter
+                namespace: argocd
+              spec:
+                project: default
+                source:
+                  repoURL: https://charts.karpenter.sh
+                  chart: karpenter
+                  targetRevision: 0.37.0
+                  helm:
+                    values: |
+                      settings:
+                        clusterName: task1-dev-us-east-1-daniel-katsenyuk-cluster
+                      serviceAccount:
+                        annotations:
+                          eks.amazonaws.com/role-arn: arn:aws:iam::960341592570:role/KarpenterControllerRole
+                destination:
+                  server: https://kubernetes.default.svc
+                  namespace: karpenter
+                syncPolicy:
+                  automated:
+                    prune: true
+                    selfHeal: true
+                  syncOptions:
+                  - CreateNamespace=true
+                  - ServerSideApply=true
+
+  - name: kubectl-apply
+    inputs:
+      parameters:
+      - name: manifest
+    container:
+      image: bitnami/kubectl:latest
+      command: [sh, -c]
+      args: ["echo \"{{inputs.parameters.manifest}}\" | kubectl apply -f -"]
