@@ -194,9 +194,9 @@ resource "aws_eks_node_group" "main" {
   instance_types = ["t3.medium", "t3a.medium", "t2.medium"]
 
   scaling_config {
-    desired_size = 3
-    max_size     = 4
-    min_size     = 1
+    desired_size = 4
+    max_size     = 5
+    min_size     = 2
   }
 
   # using depends_on to prevent permission errors during creation
@@ -206,6 +206,111 @@ resource "aws_eks_node_group" "main" {
     aws_iam_role_policy_attachment.ecr_read_only,
   ]
 }
+# ==========================================
+# 16. Karpenter IAM Roles & Policies
+# ==========================================
+
+# 16.1 Karpenter Controller Role (IRSA)
+resource "aws_iam_role" "karpenter_controller" {
+  name = "KarpenterControllerRole"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRoleWithWebIdentity"
+        Effect = "Allow"
+        Principal = {
+          Federated = "arn:aws:iam::960341592570:oidc-provider/${replace(aws_eks_cluster.main.identity[0].oidc[0].issuer, "https://", "")}"
+        }
+        Condition = {
+          StringEquals = {
+            "${replace(aws_eks_cluster.main.identity[0].oidc[0].issuer, "https://", "")}:sub" = "system:serviceaccount:karpenter:karpenter"
+          }
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "karpenter_controller" {
+  name = "KarpenterControllerPolicy"
+  role = aws_iam_role.karpenter_controller.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "ec2:CreateFleet",
+          "ec2:CreateLaunchTemplate",
+          "ec2:CreateTags",
+          "ec2:DescribeAvailabilityZones",
+          "ec2:DescribeImages",
+          "ec2:DescribeInstances",
+          "ec2:DescribeInstanceTypeOfferings",
+          "ec2:DescribeInstanceTypes",
+          "ec2:DescribeLaunchTemplates",
+          "ec2:DescribeSecurityGroups",
+          "ec2:DescribeSubnets",
+          "ec2:FreeOfferings",
+          "ec2:RunInstances",
+          "ec2:TerminateInstances",
+          "iam:PassRole",
+          "ssm:GetParameter"
+        ]
+        Effect   = "Allow"
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+# 16.2 Karpenter Node Role (Instance Profile)
+resource "aws_iam_role" "karpenter_node" {
+  name = "KarpenterNodeRole"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "karpenter_node_worker" {
+  role       = aws_iam_role.karpenter_node.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
+}
+
+resource "aws_iam_role_policy_attachment" "karpenter_node_cni" {
+  role       = aws_iam_role.karpenter_node.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+}
+
+resource "aws_iam_role_policy_attachment" "karpenter_node_ecr" {
+  role       = aws_iam_role.karpenter_node.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+}
+
+resource "aws_iam_role_policy_attachment" "karpenter_node_ssm" {
+  role       = aws_iam_role.karpenter_node.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+# 16.3 Allow Karpenter Nodes to join EKS
+resource "aws_eks_access_entry" "karpenter_node" {
+  cluster_name      = aws_eks_cluster.main.name
+  principal_arn     = aws_iam_role.karpenter_node.arn
+  type              = "EC2_LINUX"
+}
+
 # 15. creating Secret in AWS Secrets Manager (for the token)
 resource "aws_secretsmanager_secret" "app_token" {
   name        = "${local.name_prefix}-generated-token"
