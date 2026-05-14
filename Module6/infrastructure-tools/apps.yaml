@@ -18,6 +18,13 @@ spec:
       selfHeal: true
     syncOptions:
     - CreateNamespace=true
+    - ServerSideApply=true
+    - Validate=false
+  ignoreDifferences:
+  - group: apps
+    kind: Deployment
+    jsonPointers:
+    - /status
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -59,6 +66,12 @@ spec:
     syncOptions:
     - CreateNamespace=true
     - ServerSideApply=true   # required for large CRDs in kube-prometheus-stack
+    - Validate=false
+  ignoreDifferences:
+  - group: apps
+    kind: Deployment
+    jsonPointers:
+    - /status
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -104,3 +117,10 @@ spec:
       selfHeal: true
     syncOptions:
     - CreateNamespace=true
+    - ServerSideApply=true
+    - Validate=false
+  ignoreDifferences:
+  - group: apps
+    kind: Deployment
+    jsonPointers:
+    - /status
